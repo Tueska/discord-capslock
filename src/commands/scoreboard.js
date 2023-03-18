@@ -15,7 +15,7 @@ export default async function Scoreboard(client, db) {
             db.all('SELECT user_id, score FROM scoreboard WHERE guild_id = ? ORDER BY score DESC LIMIT 10', [interaction.guild.id], async (err, rows) => {
                 if (err) throw err;
                 if (!rows || rows.length === 0) {
-                    interaction.reply("No scoreboard entries found");
+                    interaction.reply({ content: "No scoreboard entries found", ephemeral: true });
                     return;
                 }
 

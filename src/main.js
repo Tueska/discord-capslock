@@ -1,4 +1,4 @@
-import { Client } from 'discord.js';
+import { Client, EmbedBuilder } from 'discord.js';
 import Scoreboard from './commands/scoreboard.js';
 import Active from './commands/setactive.js';
 import GracePeriod from './commands/setgrace.js';
@@ -6,7 +6,7 @@ import Threshold from './commands/setthreshold.js';
 import ClearScoreboard from './commands/clearscoreboard.js';
 import { config } from "dotenv";
 config();
-const client = new Client({ intents: ["Guilds", "GuildMessages", "DirectMessages", "MessageContent"] });
+const client = new Client({ intents: ["Guilds", "GuildMessages", "DirectMessages", "MessageContent", 'GuildWebhooks'] });
 const token = process.env.DISCORD_TOKEN;
 
 // import sqlite3 from 'sqlite3';
@@ -37,7 +37,10 @@ client.on('guildDelete', guild => {
 
 client.on('messageCreate', msg => {
     db.get('SELECT active, grace_period, threshold FROM guilds WHERE id = ?', [msg.guild.id], (err, row) => {
-        if (err) throw err;
+        if (err) {
+            // Insert guild into database if it doesn't exist
+            db.run('INSERT INTO guilds (id, active, grace_period, threshold) VALUES (?, ?, 5, 50)', [msg.guild.id, true]);
+        }
         if (!row) {
             return;
         }
@@ -69,13 +72,30 @@ client.on('messageCreate', msg => {
 
             // Set scoreboard entry for user or increment score
             db.run('INSERT INTO scoreboard (guild_id, user_id, score) VALUES (?, ?, 1) ON CONFLICT (guild_id, user_id) DO UPDATE SET score = score + 1', [msg.guild.id, msg.author.id]);
-
             // Create webhook in the channel the message was sent to send the message as the user who sent it originally
             msg.channel.createWebhook({ name: msg.author.username.toLowerCase(), avatar: msg.author.avatarURL() }).then(webhook => {
-                webhook.send(fakeMsg).then(() => {
-                    msg.delete();
-                    webhook.delete();
-                });
+                if (msg.mentions.repliedUser) {
+                    // Get the original message from recipient
+                    msg.channel.messages.fetch(msg.reference.messageId).then(originalMsg => {
+                        const embed = new EmbedBuilder({
+                            author: {
+                                name: originalMsg.author.username, iconURL: originalMsg.author.displayAvatarURL()
+                            },
+                            description: `[Reply to:](https://discord.com/channels/${msg.guild.id}/${msg.channel.id}/${msg.reference.messageId}) ${originalMsg.content}`,
+                        });
+
+                        // Send the embed with the message and fakeMsg as normal message above
+                        webhook.send({ content: fakeMsg, embeds: [embed] }).then(() => {
+                            msg.delete();
+                            webhook.delete();
+                        });
+                    });
+                } else {
+                    webhook.send(fakeMsg).then(() => {
+                        msg.delete();
+                        webhook.delete();
+                    });
+                }
             });
         }
     });
