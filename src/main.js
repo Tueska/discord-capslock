@@ -49,8 +49,10 @@ client.on('messageCreate', msg => {
 
         if (msg.author.bot || !/[a-zA-Z]/.test(msg.content)) return;
 
-        const uppercaseCount = (msg.content.match(/[A-Z]/g) || []).length;
-        const uppercasePercentage = uppercaseCount / msg.content.length;
+        // remove whitespace from msg.content
+        const msgContent = msg.content.replace(/\s/g, '');
+        const uppercaseCount = (msgContent.match(/[A-Z]/g) || []).length;
+        const uppercasePercentage = uppercaseCount / msgContent.length;
 
         if (uppercasePercentage > row.threshold / 100 && msg.content.length > 5) {
             if (!userList.has(msg.author.id)) {
