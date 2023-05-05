@@ -50,7 +50,7 @@ client.on('messageCreate', msg => {
         if (msg.author.bot || !/[a-zA-Z]/.test(msg.content)) return;
 
 
-        const msgContent = msg.content.replace(/\s/g, '').replace(/<@!?\d+>/g, '');
+        const msgContent = msg.content.replace(/\s/g, '').replace(/<@!?\d+>/g, '').replace(/<:.*?:[0-9]+>/g, '');
         const uppercaseCount = (msgContent.match(/[A-Z]/g) || []).length;
         const uppercasePercentage = uppercaseCount / msgContent.length;
 
