@@ -53,7 +53,6 @@ client.on('messageCreate', msg => {
         const msgContent = msg.content.replace(/\s/g, '').replace(/<@!?\d+>/g, '').replace(/<\w?:.*?:[0-9]+>/g, '');
         const uppercaseCount = (msgContent.match(/[A-Z]/g) || []).length;
         const uppercasePercentage = uppercaseCount / msgContent.length;
-        console.log(msgContent, uppercaseCount, uppercasePercentage)
 
         if (uppercasePercentage > row.threshold / 100 && msg.content.length > 5) {
             if (!userList.has(msg.author.id)) {
